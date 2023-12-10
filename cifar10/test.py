@@ -15,8 +15,8 @@ from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
 from timm.data import create_dataset, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset, create_loader
 # from loader import create_loader
-from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, \
-    convert_splitbn_model, model_parameters
+from timm.models.layers import convert_splitbn_model
+from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, model_parameters
 from timm.utils import *
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, JsdCrossEntropy
 from timm.optim import create_optimizer_v2, optimizer_kwargs
@@ -80,9 +80,9 @@ parser.add_argument('--patch-size', type=int, default=None, metavar='N',
 parser.add_argument('--mlp-ratio', type=int, default=None, metavar='N',
                     help='expand ration of embedding dimension in MLP block')
 # Dataset / Model parameters
-parser.add_argument('-data-dir', metavar='DIR', default="/media/data/imagenet2012/",
+parser.add_argument('-data-dir', metavar='DIR', default="../data/imagenet2012/",
                     help='path to dataset')
-parser.add_argument('--dataset', '-d', metavar='NAME', default='/media/data/spike-transformer-network/torch/cifar10/',
+parser.add_argument('--dataset', '-d', metavar='NAME', default='../data/cifar10/',
                     help='dataset type (default: ImageFolder/ImageTar if empty)')
 parser.add_argument('--train-split', metavar='NAME', default='train',
                     help='dataset train split (default: train)')
@@ -111,7 +111,7 @@ parser.add_argument('-vb', '--val-batch-size', type=int, default=16, metavar='N'
 
 # Test or resume
 parser.add_argument('--resume',
-                    default='/media/data/models/Spikingformer-cifar10/git-model/checkpoint-405.pth.tar',
+                    default='../data/checkpoint-405.pth.tar',
                     type=str, metavar='PATH',
                     help='Test model / Resume full model and optimizer state from checkpoint (default: none)')
 parser.add_argument('--no-resume-opt', action='store_true', default=True,
@@ -434,6 +434,7 @@ def main():
     # optionally resume from a checkpoint
     resume_epoch = None
     if args.resume:
+        print(args.resume)
         resume_epoch = resume_checkpoint(
             model, args.resume,
             optimizer=None if args.no_resume_opt else optimizer,
@@ -480,10 +481,9 @@ def main():
     dataset_train = create_dataset(
         args.dataset,
         root=args.data_dir, split=args.train_split, is_training=True,
-        batch_size=args.batch_size, repeats=args.epoch_repeats)
+        batch_size=args.batch_size, repeats=args.epoch_repeats, download=True)
     dataset_eval = create_dataset(
-        args.dataset, root=args.data_dir, split=args.val_split, is_training=False, batch_size=args.batch_size)
-
+        args.dataset, root=args.data_dir, split=args.val_split, is_training=False, batch_size=args.batch_size, download=True)
     # setup mixup / cutmix
     collate_fn = None
     mixup_fn = None
